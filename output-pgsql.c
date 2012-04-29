@@ -67,6 +67,7 @@ static struct s_table {
 #define FLAG_NOCACHE 4    /* Optimisation: don't bother remembering this one */
 #define FLAG_DELETE  8    /* These tags should be simply deleted on sight */
 #define FLAG_PHSTORE 17   /* polygons without own column but listed in hstore this implies FLAG_POLYGON */
+#define FLAG_OPTIONAL 32  /* Make a column for this tag, but don't include a feature just because this tag is present */
 static struct flagsname {
     char *name;
     int flag;
@@ -75,7 +76,8 @@ static struct flagsname {
     { .name = "linear",     .flag = FLAG_LINEAR },
     { .name = "nocache",    .flag = FLAG_NOCACHE },
     { .name = "delete",     .flag = FLAG_DELETE },
-    { .name = "phstore",    .flag = FLAG_PHSTORE }
+    { .name = "phstore",    .flag = FLAG_PHSTORE },
+    { .name = "optional",   .flag = FLAG_OPTIONAL },
 };
 #define NUM_FLAGS ((signed)(sizeof(tagflags) / sizeof(tagflags[0])))
 
@@ -791,7 +793,10 @@ unsigned int pgsql_filter_tags(enum OsmType type, struct keyval *tags, int *poly
                     break;
                 }
 
-                filter = 0;
+                if( !(exportList[type][i].flags & FLAG_OPTIONAL) )
+                {
+                    filter = 0;
+                }
                 flags |= exportList[type][i].flags;
 
                 pushItem( &temp, item );
