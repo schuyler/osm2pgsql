@@ -221,6 +221,9 @@ static void long_usage(char *arg0)
     printf("      --flat-nodes\tSpecifies the flat file to use to persistently store node information in slim mode instead of in pgsql\n");
     printf("                  \t\tThis file is a single > 16Gb large file. This method is only recomended for full planet imports\n");
     printf("                   \t\tas it doesn't work well with small extracts. The default is disabled\n");
+    printf("      --sanitize-columns\n");
+    printf("              \t\tConverts all non-alphanumeric characters in tag keys to underscores\n");
+    printf("              \t\tin column names when adding columns to a PostgreSQL database.\n");
     printf("   -h|--help\t\tHelp information.\n");
     printf("   -v|--verbose\t\tVerbose output.\n");
     printf("\n");
@@ -508,7 +511,11 @@ int main(int argc, char *argv[])
             	flat_node_cache_enabled = 1;
             	flat_nodes_file = optarg;
             	break;
+<<<<<<< HEAD
             case 210: sanitize_columns = 1; break;
+=======
+            case 220: sanitize_columns = 1; break;
+>>>>>>> Add --sanitize-columns option to replace non-alphanumeric chars in column names with underscores.
             case 'V': exit(EXIT_SUCCESS);
             case '?':
             default:
@@ -618,6 +625,7 @@ int main(int argc, char *argv[])
     options.sanitize_columns = sanitize_columns;
     options.flat_node_cache_enabled = flat_node_cache_enabled;
     options.flat_node_file = flat_nodes_file;
+    options.sanitize_columns = sanitize_columns;
 
     if (strcmp("pgsql", output_backend) == 0) {
       osmdata.out = &out_pgsql;
