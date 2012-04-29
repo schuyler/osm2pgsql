@@ -68,6 +68,7 @@ static struct s_table {
 #define FLAG_DELETE  8    /* These tags should be simply deleted on sight */
 #define FLAG_PHSTORE 17   /* polygons without own column but listed in hstore this implies FLAG_POLYGON */
 #define FLAG_OPTIONAL 32  /* Make a column for this tag, but don't include a feature just because this tag is present */
+#define FLAG_REQUIRED 64  /* Skip any features for which this tag isn't set */
 static struct flagsname {
     char *name;
     int flag;
@@ -78,6 +79,7 @@ static struct flagsname {
     { .name = "delete",     .flag = FLAG_DELETE },
     { .name = "phstore",    .flag = FLAG_PHSTORE },
     { .name = "optional",   .flag = FLAG_OPTIONAL },
+    { .name = "required",   .flag = FLAG_REQUIRED },
 };
 #define NUM_FLAGS ((signed)(sizeof(tagflags) / sizeof(tagflags[0])))
 
@@ -91,6 +93,7 @@ struct taginfo {
 
 static struct taginfo *exportList[4]; /* Indexed by enum table_id */
 static int exportListCount[4];
+static int requiredTagsCount[4];
 
 /* Data to generate z-order column and road table
  * The name of the roads table is misleading, this table
@@ -197,12 +200,14 @@ void read_style_file( const char *filename )
     {
       memcpy( &exportList[ OSMTYPE_NODE ][ exportListCount[ OSMTYPE_NODE ] ], &temp, sizeof(temp) );
       exportListCount[ OSMTYPE_NODE ]++;
+      if ( temp.flags & FLAG_REQUIRED ) requiredTagsCount[ OSMTYPE_NODE ]++;
       flag = 1;
     }
     if( strstr( osmtype, "way" ) )
     {
       memcpy( &exportList[ OSMTYPE_WAY ][ exportListCount[ OSMTYPE_WAY ] ], &temp, sizeof(temp) );
       exportListCount[ OSMTYPE_WAY ]++;
+      if ( temp.flags & FLAG_REQUIRED ) requiredTagsCount[ OSMTYPE_WAY ]++;
       flag = 1;
     }
     if( !flag )
@@ -759,6 +764,7 @@ unsigned int pgsql_filter_tags(enum OsmType type, struct keyval *tags, int *poly
     int i, filter = 1;
     int flags = 0;
     int add_area_tag = 0;
+    int required_tags = 0;
 
     const char *area;
     struct keyval *item;
@@ -793,6 +799,11 @@ unsigned int pgsql_filter_tags(enum OsmType type, struct keyval *tags, int *poly
                     break;
                 }
 
+                if( exportList[type][i].flags & FLAG_REQUIRED )
+                {
+                    required_tags++;
+                }
+
                 if( !(exportList[type][i].flags & FLAG_OPTIONAL) )
                 {
                     filter = 0;
@@ -819,6 +830,14 @@ unsigned int pgsql_filter_tags(enum OsmType type, struct keyval *tags, int *poly
             }
             item = NULL;
         }
+    }
+
+    /* Did we find all the tags marked as being required? 
+       Keeping a count is cheating slightly but a LOT cheaper than tracking
+       which tags were found. */
+    if ( !filter && (required_tags != requiredTagsCount[type]) )
+    {
+        filter = 1;
     }
 
     /* Move from temp list back to original list */
