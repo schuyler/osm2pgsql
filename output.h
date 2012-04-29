@@ -50,6 +50,7 @@ struct output_options {
   int droptemp; /* drop slim mode temp tables after act */
   int unlogged; /* use unlogged tables where possible */
   int hstore_match_only; /* only copy rows that match an explicitly listed key */
+  int sanitize_columns; /* convert non-alphanum chars in keys to underscores in column names */
 };
 
 struct output_t {

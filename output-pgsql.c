@@ -15,6 +15,7 @@
 #include <assert.h>
 #include <errno.h>
 #include <time.h>
+#include <ctype.h>
 
 #ifdef HAVE_PTHREAD
 #include <pthread.h>
@@ -757,6 +758,20 @@ static int tag_indicates_polygon(enum OsmType type, const char *key)
     return 0;
 }
 
+/* Replace non-alphanumeric chars in column names with underscores */
+char *sanitize_column_name(char *name)
+{
+    char *column_name = strdup(name);
+    for (char *c = column_name; *c != '\0'; c++)
+    {
+        if ( !isalnum(*c) )
+        {
+            *c = '_';
+        }
+    }
+    return column_name;
+}
+
 /* Go through the given tags and determine the union of flags. Also remove
  * any tags from the list that we don't know about */
 unsigned int pgsql_filter_tags(enum OsmType type, struct keyval *tags, int *polygon)
@@ -1299,7 +1314,14 @@ static int pgsql_out_start(const struct output_options *options)
                     continue;
                 if( (exportTags[j].flags & FLAG_PHSTORE ) == FLAG_PHSTORE)
                     continue;
-                sprintf(tmp, ",\"%s\" %s", exportTags[j].name, exportTags[j].type);
+                if( options->sanitize_columns )
+                {
+                    char *column_name = sanitize_column_name(exportTags[j].name);
+                    sprintf(tmp, ",\"%s\" %s", column_name, exportTags[j].type);
+                    free(column_name);
+                } else {
+                    sprintf(tmp, ",\"%s\" %s", exportTags[j].name, exportTags[j].type);
+                }
                 if (strlen(sql) + strlen(tmp) + 1 > sql_len) {
                     sql_len *= 2;
                     sql = realloc(sql, sql_len);
@@ -1345,20 +1367,25 @@ static int pgsql_out_start(const struct output_options *options)
                 exit_nicely();
             }
             for (j=0; j < numTags; j++) {
+                char *column_name = exportTags[j].name;
+
                 if( exportTags[j].flags & FLAG_DELETE )
                     continue;
                 if( (exportTags[j].flags & FLAG_PHSTORE) == FLAG_PHSTORE)
                     continue;
-                sprintf(tmp, "\"%s\"", exportTags[j].name);
+                
+                if (options->sanitize_columns) column_name = sanitize_column_name(column_name);
+                sprintf(tmp, "\"%s\"", column_name);
                 if (PQfnumber(res, tmp) < 0) {
 #if 0
-                    fprintf(stderr, "Append failed. Column \"%s\" is missing from \"%s\"\n", exportTags[j].name, tables[i].name);
+                    fprintf(stderr, "Append failed. Column \"%s\" is missing from \"%s\"\n", column_name, tables[i].name);
                     exit_nicely();
 #else
-                    fprintf(stderr, "Adding new column \"%s\" to \"%s\"\n", exportTags[j].name, tables[i].name);
-                    pgsql_exec(sql_conn, PGRES_COMMAND_OK, "ALTER TABLE %s ADD COLUMN \"%s\" %s;\n", tables[i].name, exportTags[j].name, exportTags[j].type);
+                    fprintf(stderr, "Adding new column \"%s\" to \"%s\"\n", column_name, tables[i].name);
+                    pgsql_exec(sql_conn, PGRES_COMMAND_OK, "ALTER TABLE %s ADD COLUMN \"%s\" %s;\n", tables[i].name, column_name, exportTags[j].type);
 #endif
                 }
+                if (options->sanitize_columns) free(column_name);
                 /* Note: we do not verify the type or delete unused columns */
             }
 
@@ -1377,7 +1404,14 @@ static int pgsql_out_start(const struct output_options *options)
                 continue;
             if( (exportTags[j].flags & FLAG_PHSTORE ) == FLAG_PHSTORE)
                 continue;
-            sprintf(tmp, ",\"%s\"", exportTags[j].name);
+
+            if (options->sanitize_columns) {
+                char *column_name = sanitize_column_name(exportTags[j].name);
+                sprintf(tmp, ",\"%s\"", column_name);
+                free(column_name);
+            } else {
+                sprintf(tmp, ",\"%s\"", exportTags[j].name);
+            }
 
             if (strlen(sql) + strlen(tmp) + 1 > sql_len) {
                 sql_len *= 2;

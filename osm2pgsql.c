@@ -214,6 +214,9 @@ static void long_usage(char *arg0)
     /* use "chunked" as a default in 32 bit compilations, as it is less wasteful of virtual memory than "optimized"*/
     printf("                      \t\t   The default is \"chunked\"\n");
 #endif
+    printf("      --sanitize-columns\n");
+    printf("              \t\tConverts all non-alphanumeric characters in tag keys to underscores\n");
+    printf("              \t\tin column names when adding columns to a PostgreSQL database.\n");
 
     printf("   -h|--help\t\tHelp information.\n");
     printf("   -v|--verbose\t\tVerbose output.\n");
@@ -356,6 +359,7 @@ int main(int argc, char *argv[])
     int num_procs = 1;
     int droptemp = 0;
     int unlogged = 0;
+    int sanitize_columns = 0;
     const char *expire_tiles_filename = "dirty_tiles";
     const char *db = "gis";
     const char *username=NULL;
@@ -427,6 +431,7 @@ int main(int argc, char *argv[])
             {"number-processes", 1, 0, 205},
             {"drop", 0, 0, 206},
             {"unlogged", 0, 0, 207},
+            {"sanitize-columns", 0, 0, 209},
             {0, 0, 0, 0}
         };
 
@@ -493,6 +498,7 @@ int main(int argc, char *argv[])
             case 205: num_procs = atoi(optarg); break;
             case 206: droptemp = 1; break;
             case 207: unlogged = 1; break;
+            case 209: sanitize_columns = 1; break;
             case 'V': exit(EXIT_SUCCESS);
             case '?':
             default:
@@ -599,6 +605,7 @@ int main(int argc, char *argv[])
     options.num_procs = num_procs;
     options.droptemp = droptemp;
     options.unlogged = unlogged;
+    options.sanitize_columns = sanitize_columns;
 
     if (strcmp("pgsql", output_backend) == 0) {
       osmdata.out = &out_pgsql;
