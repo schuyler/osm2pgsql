@@ -1,3 +1,9 @@
+osm2pgsql (0.80.0-13~precise2) oneiric; urgency=low
+
+  * Enable 64 bit IDs.
+
+ -- Schuyler Erle <sderle@localhost>  Mon, 27 Aug 2012 21:20:55 +0200
+
 osm2pgsql (0.80.0-13~precise1) precise; urgency=low
 
   * Update from upstream to svn version 28638

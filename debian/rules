@@ -28,7 +28,7 @@ build-stamp: configure-stamp
 	automake --add-missing
 	aclocal
 	autoreconf -f
-	./configure --prefix=/usr --datadir=/usr/share/osm2pgsql
+	./configure --prefix=/usr --datadir=/usr/share/osm2pgsql --enable-64bit-ids
 	$(MAKE)
 	#docbook-to-man debian/osm2pgsql.sgml > osm2pgsql.1
 
