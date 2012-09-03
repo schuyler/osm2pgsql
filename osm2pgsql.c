@@ -224,6 +224,7 @@ static void long_usage(char *arg0)
     printf("      --sanitize-columns\n");
     printf("              \t\tConverts all non-alphanumeric characters in tag keys to underscores\n");
     printf("              \t\tin column names when adding columns to a PostgreSQL database.\n");
+    printf("      --no-spatial-index\tSkip creating GIST indexes on spatial columns after import.\n");
     printf("   -h|--help\t\tHelp information.\n");
     printf("   -v|--verbose\t\tVerbose output.\n");
     printf("\n");
@@ -386,6 +387,7 @@ int main(int argc, char *argv[])
     const char **hstore_columns = NULL;
     const char *flat_nodes_file = NULL;
     int n_hstore_columns = 0;
+    int no_spatial_index = 0;
     int keep_coastlines=0;
     int cache = 800;
     struct output_options options;
@@ -441,6 +443,7 @@ int main(int argc, char *argv[])
             {"unlogged", 0, 0, 207},
             {"flat-nodes",1,0,209},
             {"sanitize-columns", 0, 0, 210},
+            {"no-spatial-index", 0, 0, 211},
             {0, 0, 0, 0}
         };
 
@@ -511,11 +514,8 @@ int main(int argc, char *argv[])
             	flat_node_cache_enabled = 1;
             	flat_nodes_file = optarg;
             	break;
-<<<<<<< HEAD
             case 210: sanitize_columns = 1; break;
-=======
-            case 220: sanitize_columns = 1; break;
->>>>>>> Add --sanitize-columns option to replace non-alphanumeric chars in column names with underscores.
+            case 211: no_spatial_index = 1; break;
             case 'V': exit(EXIT_SUCCESS);
             case '?':
             default:
@@ -622,10 +622,10 @@ int main(int argc, char *argv[])
     options.num_procs = num_procs;
     options.droptemp = droptemp;
     options.unlogged = unlogged;
-    options.sanitize_columns = sanitize_columns;
     options.flat_node_cache_enabled = flat_node_cache_enabled;
     options.flat_node_file = flat_nodes_file;
     options.sanitize_columns = sanitize_columns;
+    options.create_spatial_index = no_spatial_index ? 0 : 1;
 
     if (strcmp("pgsql", output_backend) == 0) {
       osmdata.out = &out_pgsql;

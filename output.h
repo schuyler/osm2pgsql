@@ -53,6 +53,7 @@ struct output_options {
   int flat_node_cache_enabled;
   const char *flat_node_file;
   int sanitize_columns; /* convert non-alphanum chars in keys to underscores in column names */
+  int create_spatial_index; /* create spatial indexes after import (true by default) */
 };
 
 struct output_t {
