@@ -853,6 +853,9 @@ unsigned int pgsql_filter_tags(enum OsmType type, struct keyval *tags, int *poly
                     char *pos = strstr(item->key, Options->hstore_columns[j]);
                     if (pos == item->key) {
                         pushItem(&temp, item);
+                        /* ... but if hstore_match_only is set then don't take this 
+                           as a reason for keeping the object */
+                        if (!Options->hstore_match_only) filter = 0;
                         break; 
                     }
                 }
@@ -860,9 +863,6 @@ unsigned int pgsql_filter_tags(enum OsmType type, struct keyval *tags, int *poly
                 if (j == Options->n_hstore_columns) {
                     freeItem(item);
                 }
-                /* ... but if hstore_match_only is set then don't take this 
-                   as a reason for keeping the object */
-                if (!Options->hstore_match_only) filter = 0;
             } else {
                 freeItem(item);
             }
